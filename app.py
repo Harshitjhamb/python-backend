@@ -572,6 +572,12 @@ def save_openweather_to_db(weather_json, station_name: str):
     except Exception as e:
         print(f"OpenWeather Save Error for {station_name}:", e)
 
+
+@app.route("/ping")
+def ping():
+    return "pong"
+
+
 def sync_external_data():
     """
     Called by fetch.py every hour (no Flask request context).
