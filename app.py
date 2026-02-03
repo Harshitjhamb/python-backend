@@ -4,6 +4,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
+import mysql.connector
 import pymysql
 from datetime import date, datetime, time, timedelta
 
@@ -169,14 +170,12 @@ DB_NAME = os.getenv("DB_NAME", "harshit")
 
 
 def get_db_connection():
-    return pymysql.connect(
-        host=DB_HOST,
-        port=DB_PORT,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_NAME,
-        connect_timeout=5,
-        cursorclass=pymysql.cursors.DictCursor
+    return mysql.connector.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+        port=int(os.getenv("DB_PORT", 3306))
     )
 
 def get_latest_pollutant_reading_for_station(station_display_name: str | None):
