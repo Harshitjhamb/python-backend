@@ -784,17 +784,37 @@ def insert_meteorological():
         conn.close()
     return jsonify({"status": "ok"}), 201
 
+# @app.route('/api/station', methods=['GET'])
+# def get_all_stations():
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor(pymysql.cursors.DictCursor)
+#         cursor.execute("SELECT station_id, name FROM stations")
+#         rows = cursor.fetchall()
+#         return jsonify(rows), 200
+#     except Exception as e:
+#         print("❌ ERROR:", e)
+#         return jsonify({"error": str(e)}), 500
 @app.route('/api/station', methods=['GET'])
 def get_all_stations():
+    conn = None
+    cursor = None
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT station_id, name FROM stations")
         rows = cursor.fetchall()
         return jsonify(rows), 200
+
     except Exception as e:
         print("❌ ERROR:", e)
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route("/")
 def root():
