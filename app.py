@@ -184,6 +184,8 @@ def get_db_connection():
         database=DB_NAME,
         ssl_ca=DB_SSL_CA,
         ssl_verify_cert=True
+        connection_timeout=5,   # ⬅️ ADD THIS
+        use_pure=True 
     )
 
 
