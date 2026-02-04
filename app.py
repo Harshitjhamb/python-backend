@@ -4,7 +4,6 @@ from pathlib import Path
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
-import mysql.connector
 import pymysql
 from datetime import date, datetime, time, timedelta
 
@@ -158,24 +157,33 @@ try:
 except Exception as e:
     print("WARNING: dotenv not loaded:", e)
 
+import os
+import mysql.connector
+
 PORT = int(os.getenv("PORT", 5001))
 HOST = os.getenv("HOST", "0.0.0.0")
+
 WEATHERAPI_KEY = os.getenv("WEATHERAPI_KEY", "")
 INDIA_DATA_API_KEY = os.getenv("INDIA_DATA_API_KEY", "")
-DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
-DB_PORT = int(os.getenv("DB_PORT", 3306))
-DB_USER = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "Harshit@5993")
-DB_NAME = os.getenv("DB_NAME", "harshit")
+
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT", 11773))
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+DB_SSL_CA = os.getenv("DB_SSL_CA")
 
 def get_db_connection():
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-        port=int(os.getenv("DB_PORT", 3306))
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        ssl_ca=DB_SSL_CA,
+        ssl_verify_cert=True
     )
+
 
 def get_latest_pollutant_reading_for_station(station_display_name: str | None):
     """
@@ -638,34 +646,28 @@ def sync_external_data():
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-
 @app.route("/api/combined_data", methods=["GET"])
 def combined_data():
+    """
+    Used by frontend dashboard.
+    - Reads latest pollutant row for the requested station
+    - Reads latest meteorological row for the same station
+    """
     station = request.args.get("station")
-
-    if not station:
-        return jsonify({"error": "station query parameter is required"}), 400
-
     print(f"/api/combined_data called for station: {station}")
 
-    try:
-        db_pollutants = get_latest_pollutant_reading_for_station(station)
-        db_meteo = get_latest_meteorological_reading_for_station(station)
+    db_pollutants = get_latest_pollutant_reading_for_station(station)
+    db_meteo = get_latest_meteorological_reading_for_station(station)
 
-        return jsonify(
-            make_json_safe(
-                {
-                    "location": station,
-                    "pollutant_data": db_pollutants,
-                    "meteorological_data_db": db_meteo,
-                }
-            )
+    return jsonify(
+        make_json_safe(
+            {
+                "location": station,
+                "pollutant_data": db_pollutants,
+                "meteorological_data_db": db_meteo,
+            }
         )
-
-    except Exception as e:
-        # THIS prevents Render suspension
-        print("ERROR in /api/combined_data:", e)
-        return jsonify({"error": str(e)}), 500
+    )
 
 @app.post("/api/register_user")
 def register_user_endpoint():
