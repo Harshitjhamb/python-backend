@@ -831,17 +831,6 @@ def insert_meteorological():
         conn.close()
     return jsonify({"status": "ok"}), 201
 
-# @app.route('/api/station', methods=['GET'])
-# def get_all_stations():
-#     try:
-#         conn = get_db_connection()
-#         cursor = conn.cursor(pymysql.cursors.DictCursor)
-#         cursor.execute("SELECT station_id, name FROM stations")
-#         rows = cursor.fetchall()
-#         return jsonify(rows), 200
-#     except Exception as e:
-#         print("❌ ERROR:", e)
-#         return jsonify({"error": str(e)}), 500
 @app.route("/api/station", methods=["GET"])
 def get_all_stations():
     try:
@@ -944,30 +933,31 @@ def temp_trend():
     finally:
         conn.close()
 
-
 @app.post("/api/login_user")
 def login_user():
     data = request.json or {}
     user_name = data.get("user_name")
 
+    if not user_name:
+        return jsonify({"status": "error", "message": "user_name required"}), 400
+
     conn = get_db_connection()
     try:
-        with conn.cursor(pymysql.cursors.DictCursor) as cur:
-
-            # Fetch user info
-            cur.execute("""
-                SELECT user_id, first_name, middle_name, last_name,
-                       age
+        with conn.cursor(dictionary=True) as cur:  # ✅ FIX
+            cur.execute(
+                """
+                SELECT user_id, first_name, middle_name, last_name, age
                 FROM users
                 WHERE user_name = %s
-            """, (user_name,))
-            
+                """,
+                (user_name,),
+            )
+
             user = cur.fetchone()
 
             if not user:
                 return jsonify({"status": "error", "message": "Invalid username"}), 400
 
-            # Store user ID in session
             session["user_id"] = user["user_id"]
 
             return jsonify({
@@ -980,11 +970,12 @@ def login_user():
             }), 200
 
     except Exception as e:
-        print("Login Error:", e)
-        return jsonify({"status": "error", "message": str(e)}), 400
+        print("Login Error:", repr(e))
+        return jsonify({"status": "error", "message": str(e)}), 500
 
     finally:
         conn.close()
+
 
 @app.post("/api/register_user")
 def register_user():
@@ -996,22 +987,30 @@ def register_user():
     uname = data.get("user_name")
     age = data.get("age")
 
+    if not uname:
+        return jsonify({"error": "user_name required"}), 400
+
     conn = get_db_connection()
     try:
-        cur = conn.cursor()  # NO dictionary cursor here
-        cur.execute("""
-            INSERT INTO users (first_name, last_name, middle_name, user_name, age)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (first, last, mid, uname, age))
-        conn.commit()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO users (first_name, last_name, middle_name, user_name, age)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (first, last, mid, uname, age),
+            )
+            conn.commit()
+
         return jsonify({"status": "ok"}), 200
 
     except Exception as e:
-        print("Register Error:", e)
+        print("Register Error:", repr(e))
         return jsonify({"error": str(e)}), 500
 
     finally:
         conn.close()
+
 
 @app.get("/api/get_user")
 def get_user():
