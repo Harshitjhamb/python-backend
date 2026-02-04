@@ -202,10 +202,11 @@ def get_latest_pollutant_reading_for_station(station_display_name: str | None):
     """
     EXACT station match on location_name.
     If no row for that station → fallback to latest overall.
+    Returns a dict or None.
     """
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(dictionary=True) as cur:
             if station_display_name:
                 cur.execute(
                     """
@@ -230,7 +231,9 @@ def get_latest_pollutant_reading_for_station(station_display_name: str | None):
                 LIMIT 1
                 """
             )
-            return fix_timedelta(cur.fetchone())
+            row = cur.fetchone()
+            return fix_timedelta(row) if row else None
+
     finally:
         conn.close()
 
@@ -238,10 +241,11 @@ def get_latest_meteorological_reading_for_station(station_display_name: str | No
     """
     EXACT station match on station_name in meteorological_data.
     If no row for that station → fallback to latest overall.
+    Returns a dict or None.
     """
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(dictionary=True) as cur:
             if station_display_name:
                 cur.execute(
                     """
@@ -266,9 +270,12 @@ def get_latest_meteorological_reading_for_station(station_display_name: str | No
                 LIMIT 1
                 """
             )
-            return fix_timedelta(cur.fetchone())
+            row = cur.fetchone()
+            return fix_timedelta(row) if row else None
+
     finally:
         conn.close()
+
 
 def fetch_openweather(lat: float, lon: float):
     """
