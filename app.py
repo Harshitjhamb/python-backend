@@ -5,6 +5,10 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 import pymysql
+@app.route("/")
+def root():
+    return {"status": "ok", "service": "python-backend"}
+
 from datetime import date, datetime, time, timedelta
 
 def clean(val):
