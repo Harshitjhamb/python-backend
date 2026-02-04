@@ -24,13 +24,21 @@ def clean(val):
 def make_json_safe(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
+
     if isinstance(obj, timedelta):
         return str(obj)
+
     if isinstance(obj, dict):
         return {k: make_json_safe(v) for k, v in obj.items()}
+
     if isinstance(obj, list):
         return [make_json_safe(i) for i in obj]
+
+    if isinstance(obj, tuple):   # ✅ ADD THIS
+        return [make_json_safe(i) for i in obj]
+
     return obj
+
 
 def fix_timedelta(row):
     """Convert any timedelta fields in a row dict to 'HH:MM:SS' strings."""
