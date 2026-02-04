@@ -5,9 +5,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 import pymysql
-@app.route("/")
-def root():
-    return {"status": "ok", "service": "python-backend"}
+
 
 from datetime import date, datetime, time, timedelta
 
@@ -796,6 +794,10 @@ def get_all_stations():
         print("❌ ERROR:", e)
         return jsonify({"error": str(e)}), 500
 
+@app.route("/")
+def root():
+    return {"status": "ok", "service": "python-backend"}
+    
 @app.route("/api/pollutant_trend")
 def pollutant_trend():
     station = request.args.get("station")
