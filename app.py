@@ -651,28 +651,59 @@ def sync_external_data():
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+# @app.route("/api/combined_data", methods=["GET"])
+# def combined_data():
+#     """
+#     Used by frontend dashboard.
+#     - Reads latest pollutant row for the requested station
+#     - Reads latest meteorological row for the same station
+#     """
+#     station = request.args.get("station")
+#     print(f"/api/combined_data called for station: {station}")
+
+#     db_pollutants = get_latest_pollutant_reading_for_station(station)
+#     db_meteo = get_latest_meteorological_reading_for_station(station)
+
+#     return jsonify(
+#         make_json_safe(
+#             {
+#                 "location": station,
+#                 "pollutant_data": db_pollutants,
+#                 "meteorological_data_db": db_meteo,
+#             }
+#         )
+#     )
 @app.route("/api/combined_data", methods=["GET"])
 def combined_data():
-    """
-    Used by frontend dashboard.
-    - Reads latest pollutant row for the requested station
-    - Reads latest meteorological row for the same station
-    """
     station = request.args.get("station")
+
+    if not station:
+        return jsonify({
+            "error": "station query parameter is required"
+        }), 400
+
     print(f"/api/combined_data called for station: {station}")
 
-    db_pollutants = get_latest_pollutant_reading_for_station(station)
-    db_meteo = get_latest_meteorological_reading_for_station(station)
-
-    return jsonify(
-        make_json_safe(
-            {
-                "location": station,
-                "pollutant_data": db_pollutants,
-                "meteorological_data_db": db_meteo,
-            }
+    try:
+        db_pollutants = get_latest_pollutant_reading_for_station(station)
+        db_meteo = get_latest_meteorological_reading_for_station(station)
+        return jsonify(
+            make_json_safe(
+                {
+                    "location": station,
+                    "pollutant_data": db_pollutants,
+                    "meteorological_data_db": db_meteo,
+                }
+            )
         )
-    )
+
+    except Exception as e:
+        print("❌ /api/combined_data ERROR:", repr(e))
+        return jsonify({
+            "error": "combined_data failed",
+            "details": str(e)
+        }), 500
+
 
 @app.post("/api/register_user")
 def register_user_endpoint():
