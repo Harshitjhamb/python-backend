@@ -912,7 +912,7 @@ def temp_trend():
     """
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(dictionary=True) as cur:  # ✅ FIX
             cur.execute(
                 """
                 SELECT 
@@ -932,18 +932,18 @@ def temp_trend():
         }
 
         result = []
-        for i in range(11, -1, -1):  # oldest → latest
+        for i in range(11, -1, -1):
             hour = (datetime.now() - timedelta(hours=i)).strftime("%H")
-            result.append(
-                {
-                    "record_time": f"{hour}:00",
-                    "temperature_c": data_map.get(hour),
-                }
-            )
+            result.append({
+                "record_time": f"{hour}:00",
+                "temperature_c": data_map.get(hour),
+            })
 
         return jsonify(result)
+
     finally:
         conn.close()
+
 
 @app.post("/api/login_user")
 def login_user():
