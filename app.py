@@ -666,28 +666,6 @@ def sync_external_data():
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-# @app.route("/api/combined_data", methods=["GET"])
-# def combined_data():
-#     """
-#     Used by frontend dashboard.
-#     - Reads latest pollutant row for the requested station
-#     - Reads latest meteorological row for the same station
-#     """
-#     station = request.args.get("station")
-#     print(f"/api/combined_data called for station: {station}")
-
-#     db_pollutants = get_latest_pollutant_reading_for_station(station)
-#     db_meteo = get_latest_meteorological_reading_for_station(station)
-
-#     return jsonify(
-#         make_json_safe(
-#             {
-#                 "location": station,
-#                 "pollutant_data": db_pollutants,
-#                 "meteorological_data_db": db_meteo,
-#             }
-#         )
-#     )
 @app.route("/api/combined_data", methods=["GET"])
 def combined_data():
     station = request.args.get("station")
@@ -1015,8 +993,10 @@ def register_user():
 @app.get("/api/get_user")
 def get_user():
     uid = request.args.get("user_id")
-    if not uid:
-        return jsonify({"error": "Missing user_id"}), 400
+
+    # 1️⃣ Validation
+    if not uid or not uid.isdigit():
+        return jsonify({"error": "Invalid or missing user_id"}), 400
 
     conn = get_db_connection()
     try:
@@ -1026,16 +1006,23 @@ def get_user():
             FROM users
             WHERE user_id = %s
         """, (uid,))
-        
+
         row = cur.fetchone()
-        return jsonify(row if row else {})
+
+        # 2️⃣ User not found
+        if not row:
+            return jsonify({"error": "User not found"}), 404
+
+        # 3️⃣ Success
+        return jsonify(row), 200
 
     except Exception as e:
         print("get_user error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Server error"}), 500
 
     finally:
         conn.close()
+
 
 @app.get("/api/station_by_id")
 def station_by_id():
